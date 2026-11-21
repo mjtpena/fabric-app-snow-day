@@ -1,0 +1,249 @@
+@import 'tailwindcss';
+@import '@x10/shared/styles.css';
+@source "../../../shared/src";
+
+/* ------------------------------------------------------------------ the room the globe stands in */
+
+/* Light: the blue hour of a winter afternoon. Dark: the globe on a sill at night. */
+:root {
+  --snow-room: radial-gradient(120% 95% at 50% 34%, #d3dde8 0%, #b2c2d3 48%, #8fa3b9 100%);
+  --snow-floor: rgb(70 86 104 / 0.1);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --snow-room: radial-gradient(110% 85% at 50% 36%, #1d2a3d 0%, #111a28 48%, #090d15 100%);
+    --snow-floor: rgb(0 0 0 / 0.3);
+  }
+}
+:root[data-theme='dark'] {
+  --snow-room: radial-gradient(110% 85% at 50% 36%, #1d2a3d 0%, #111a28 48%, #090d15 100%);
+  --snow-floor: rgb(0 0 0 / 0.3);
+}
+
+/* ------------------------------------------------------------------ globe overlay (three.js) */
+
+.x-globe-overlay {
+  contain: layout paint;
+}
+
+/* One focusable button per site, placed over its roof by the scene every frame. */
+.x-globe-site {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 4px;
+  width: 0;
+  height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  pointer-events: none;
+  will-change: transform;
+  outline: none;
+}
+.x-globe-site > * {
+  pointer-events: auto;
+}
+.x-globe-site[data-hidden='true'] > * {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+.x-globe-site[data-dim='true'] .x-globe-chip {
+  opacity: 0.45;
+}
+/* Phones: the chips shrink to their lens dot; the value shows on focus and in the list under the globe. */
+.x-globe-overlay[data-narrow='true'] .x-globe-site:not([data-active='true']):not(:focus-visible) .x-globe-chip {
+  padding: 4px;
+  font-size: 0;
+  line-height: 0;
+  gap: 0;
+}
+.x-globe-overlay[data-narrow='true'] .x-globe-region-meta {
+  display: none;
+}
+.x-globe-chip {
+  position: absolute;
+  bottom: 0;
+  transform: translate(-50%, 0);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  padding: 2px 7px 2px 5px;
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+  color: var(--world-ink);
+  background: var(--glass-strong);
+  box-shadow: 0 0 0 1px var(--glass-line), 0 3px 10px rgb(0 0 0 / 0.12);
+  backdrop-filter: blur(8px);
+  transition: opacity 160ms cubic-bezier(0.2, 0, 0, 1), transform 160ms cubic-bezier(0.2, 0, 0, 1);
+}
+.x-globe-chip::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--lens, var(--gray-7));
+  box-shadow: 0 0 0 1.5px color-mix(in oklab, var(--lens, var(--gray-7)) 30%, transparent);
+}
+.x-globe-tip {
+  position: absolute;
+  bottom: 24px;
+  transform: translate(-50%, 4px);
+  white-space: nowrap;
+  padding: 3px 8px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+  color: var(--world-ink);
+  background: var(--glass-strong);
+  box-shadow: 0 0 0 1px var(--glass-line), 0 4px 14px rgb(0 0 0 / 0.14);
+  backdrop-filter: blur(8px);
+  opacity: 0;
+  pointer-events: none !important;
+  transition: opacity 140ms cubic-bezier(0.2, 0, 0, 1), transform 140ms cubic-bezier(0.2, 0, 0, 1);
+}
+.x-globe-site[data-active='hover'] .x-globe-tip,
+.x-globe-site:focus-visible .x-globe-tip,
+.x-globe-site[data-active='true'] .x-globe-tip {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+.x-globe-site[data-active='true'] .x-globe-tip {
+  background: var(--accent-9);
+  color: var(--accent-contrast);
+}
+.x-globe-site:focus-visible .x-globe-chip,
+.x-globe-site[data-active='true'] .x-globe-chip {
+  box-shadow: 0 0 0 2px var(--accent-9), 0 4px 14px rgb(0 0 0 / 0.18);
+}
+
+/* Region names on the rim of the floor. */
+.x-globe-region {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 140px;
+  margin-left: -70px;
+  pointer-events: none;
+  transition: opacity 200ms cubic-bezier(0.2, 0, 0, 1);
+  will-change: transform;
+}
+.x-globe-region[data-hidden='true'] {
+  opacity: 0;
+}
+.x-globe-region-name {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--world-ink);
+  text-shadow: 0 1px 8px var(--world-haze);
+}
+.x-globe-region-meta {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--world-ink-muted);
+  text-shadow: 0 1px 8px var(--world-haze);
+}
+
+/* ------------------------------------------------------------------ the dial (HTML twin of the brass plaque) */
+
+.x-dial-day {
+  position: relative;
+  display: grid;
+  min-width: 62px;
+  padding: 6px 10px 7px;
+  border-radius: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 140ms cubic-bezier(0.2, 0, 0, 1), color 140ms cubic-bezier(0.2, 0, 0, 1);
+}
+.x-dial-day:hover {
+  background: color-mix(in oklab, var(--gray-12) 6%, transparent);
+}
+.x-dial-day[aria-checked='true'] {
+  background: var(--gray-12);
+  color: var(--gray-1);
+}
+.x-dial-day:focus-visible {
+  outline: 2px solid var(--accent-9);
+  outline-offset: 1px;
+}
+.x-dial-bar {
+  height: 3px;
+  margin-top: 5px;
+  border-radius: 999px;
+  background: color-mix(in oklab, currentColor 14%, transparent);
+  overflow: hidden;
+}
+.x-dial-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--sky-9);
+  transition: width 300ms cubic-bezier(0.2, 0, 0, 1);
+}
+.x-dial-day[aria-checked='true'] .x-dial-bar > span {
+  background: var(--ice-7);
+}
+
+/* ------------------------------------------------------------------ SVG map */
+
+.x-svg-site {
+  cursor: pointer;
+  outline: none;
+}
+.x-svg-site:focus-visible .x-svg-ring {
+  stroke: var(--accent-9);
+  stroke-width: 3;
+}
+.x-svg-flake {
+  animation: x-flake var(--fall, 7s) linear infinite;
+  animation-delay: var(--delay, 0s);
+}
+@keyframes x-flake {
+  from {
+    transform: translateY(-18px);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  to {
+    transform: translateY(18px);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .x-svg-flake {
+    animation: none;
+  }
+}
+
+/* Probability gauge on The call. */
+.x-gauge-track {
+  stroke: var(--gray-4);
+}
+
+@media print {
+  .x-logbook {
+    font-size: 10pt;
+  }
+}
